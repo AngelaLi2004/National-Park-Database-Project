@@ -6,7 +6,7 @@
 | ----------- | ---------------------- |
 | TeamID      |        Team-068        |
 | TeamName    |         chiikawa       |
-| Captain     |         Meixian   |
+| Captain     |         Meixian Li   |
 | Captain     |  meixian2@illinois.edu |
 | Member1     |        Yueyao Wang      |
 | Member1     |  yueyaow2@illinois.edu |
