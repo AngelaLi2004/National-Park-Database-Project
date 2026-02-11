@@ -19,10 +19,10 @@
 
 |   Info      |        Description     |
 | ----------- | ---------------------- |
-|  Title      |       ProjectTitle     |
+|  Title      |       WildTrack     |
 | System URL  |      link_to_system    |
 | Video Link  |      link_to_video     |
 
 ## Project Summary
 
-This is a summary of the project!
+Our project is a relational database-centric web application designed to streamline wildlife-centric trip planning for national park enthusiasts. Currently, identifying where and when to see specific animals in national parks requires tedious research across multiple disconnected sources. Our platform centralizes this information, allowing users to search by species to find corresponding national parks and the precise coordinates where those animals have been previously sighted. Users can also browse comprehensive national park profiles to see their resident biodiversity. The system bridges the gap between static geographical data and dynamic ecological observations.
