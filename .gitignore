@@ -1,0 +1,10 @@
+/doc/
+
+# temporary file
+.DS_Store
+Thumbs.db
+
+# 
+.vscode/
+.idea/
+*.swp
