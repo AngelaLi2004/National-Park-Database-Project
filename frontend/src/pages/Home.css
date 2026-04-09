@@ -1,0 +1,134 @@
+.hero-section {
+  height: 100vh; 
+  background: linear-gradient(rgba(43, 58, 32, 0.7), rgba(43, 58, 32, 0.7)), url('/public/back.jpg') center/cover;
+  background-color: #abada9; 
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: white;
+  padding: 0 20px;
+}
+
+.hero-content {
+  max-width: 800px;
+}
+
+.hero-content h1 {
+  font-size: 64px;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.hero-content p {
+  font-size: 20px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.hero-btn {
+  background-color: #e5ecd9;
+  color: #2b3a20;
+  padding: 15px 40px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 30px;
+}
+
+.hero-btn:hover {
+  background-color: #ffffff;
+  transform: translateY(-3px);
+}
+
+/* selection */
+.selection-section {
+  min-height: 60vh;
+  background-color: #f4f7f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 20px;
+}
+
+.selection-section h2 {
+  font-size: 36px;
+  color: #2b3a20;
+  margin-bottom: 50px;
+  text-align: center;
+}
+
+.choice-cards-container {
+  display: flex;
+  gap: 40px;
+  max-width: 1000px;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap; 
+}
+
+.choice-card {
+  flex: 1;
+  min-width: 300px;
+  background-color: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 2px solid transparent;
+}
+
+.choice-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+  border-color: #899c75;
+}
+
+.card-image-placeholder {
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 80px;
+}
+
+.species-bg {
+  background-color: #c9d6b8;
+}
+
+.parks-bg {
+  background-color: #aebc9e;
+}
+
+.card-text {
+  padding: 30px;
+  text-align: center;
+}
+
+.card-text h3 {
+  color: #2b3a20;
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+.card-text p {
+  color: #556b44;
+  line-height: 1.5;
+  margin-bottom: 25px;
+}
+
+.navigate-btn {
+  background-color: #899c75;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 16px;
+  width: 100%;
+}
+
+.choice-card:hover .navigate-btn {
+  background-color: #556b44;
+}
