@@ -6,14 +6,14 @@ import Species from './pages/Species';
 import NationalParks from './pages/NationalParks';
 import Sightings from './pages/Sightings';
 import Login from './pages/Login';
-import Signup from './pages/Signup'; // <-- NEW IMPORT
+import Signup from './pages/Signup';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={process.env.REACT_APP_BASE_URL || "/"}>
       <div className="App">
         <Navbar user={user} setUser={setUser} />
         <Routes>
@@ -22,7 +22,7 @@ function App() {
           <Route path="/parks" element={<NationalParks />} />
           <Route path="/sightings" element={<Sightings user={user} />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
-          <Route path="/signup" element={<Signup setUser={setUser} />} /> {/* <-- NEW ROUTE */}
+          <Route path="/signup" element={<Signup setUser={setUser} />} /> 
         </Routes>
       </div>
     </BrowserRouter>
