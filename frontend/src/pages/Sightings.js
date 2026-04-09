@@ -6,7 +6,7 @@ function Sightings({ user }) {
   const [sightings, setSightings] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [species, setSpecies] = useState('');
-  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState(''); 
   const [locationSearch, setLocationSearch] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -22,8 +22,8 @@ function Sightings({ user }) {
   useEffect(() => {
     if (user) {
       setSightings([
-        { id: 1, species: "Mountain Bluebird", date: "2026-01-01", time: "15:00", location: "Running Eagle Falls Nature Trail @ Glacier NP", amount: "1" },
-        { id: 2, species: "Grizzly Bear", date: "2026-01-02", time: "10:00", location: "Hidden Lake Trail @ Glacier NP", amount: "2" }
+        { id: 1, species: "Mountain Bluebird", date: "2026-01-01", time: "15:00", location: "Running Eagle Falls Nature Trail @ Glacier NP", description: "Saw it flying near the waterfall. It was incredibly bright blue in the afternoon sun!"},
+        { id: 2, species: "Grizzly Bear", date: "2026-01-02", time: "10:00", location: "Hidden Lake Trail @ Glacier NP", description: ""}
       ]);
     }
   }, [user]);
@@ -52,7 +52,7 @@ function Sightings({ user }) {
     setSelectedId(id);
     const s = sightings.find(item => item.id === id);
     setSpecies(s.species);
-    setAmount(s.amount || '');
+    setDescription(s.description || ''); 
     setLocationSearch(s.location);
     setDate(s.date);
     setTime(s.time);
@@ -61,7 +61,7 @@ function Sightings({ user }) {
   const clearForm = () => {
     setSelectedId(null);
     setSpecies('');
-    setAmount('');
+    setDescription('');
     setLocationSearch('');
     setDate('');
     setTime('');
@@ -82,7 +82,12 @@ function Sightings({ user }) {
 
     const sightingData = {
       id: selectedId ? selectedId : Date.now(),
-      species, amount, location: locationSearch, date, time, imageFile
+      species, 
+      description, 
+      location: locationSearch, 
+      date, 
+      time, 
+      imageFile
     };
 
     if (selectedId) {
@@ -132,6 +137,9 @@ function Sightings({ user }) {
                   <h4>{item.species}</h4>
                   <div className="pill-info">{item.time} {item.date}</div>
                   <div className="location-text">📍 {item.location}</div>
+                  {item.description && (
+                    <div className="description-text">"{item.description}"</div>
+                  )}
                 </div>
               </label>
             ))}
@@ -158,9 +166,19 @@ function Sightings({ user }) {
               <input type="text" value={species} onChange={(e) => setSpecies(e.target.value)} />
             </div>
             
-            <div className="form-group">
-              <label>Amount</label>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <div className="form-group align-top">
+              <label>Description</label>
+              <div className="textarea-wrapper">
+                <textarea 
+                  value={description} 
+                  onChange={(e) => setDescription(e.target.value)} 
+                  rows="3"
+                  maxLength="500"
+                  placeholder="Optional details..."
+                  className="form-textarea"
+                />
+                <div className="char-counter">{description.length} / 500 characters</div>
+              </div>
             </div>
             
             <div className="form-group autocomplete-group">
