@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Sightings.css';
+import { getUserSightings, addSightingDB, deleteSightingDB } from '../services/api';
 
 function Sightings({ user }) {
   const [sightings, setSightings] = useState([]);
@@ -20,12 +21,13 @@ function Sightings({ user }) {
   ];
 
   useEffect(() => {
-    if (user) {
-      setSightings([
-        { id: 1, species: "Mountain Bluebird", date: "2026-01-01", time: "15:00", location: "Running Eagle Falls Nature Trail @ Glacier NP", description: "Saw it flying near the waterfall. It was incredibly bright blue in the afternoon sun!"},
-        { id: 2, species: "Grizzly Bear", date: "2026-01-02", time: "10:00", location: "Hidden Lake Trail @ Glacier NP", description: ""}
-      ]);
-    }
+    const fetchSightings = async () => {
+      if (user) {
+        const userSightings = await getUserSightings(user.id);
+        setSightings(userSightings);
+      }
+    };
+    fetchSightings();
   }, [user]);
 
   const handleLocationChange = (e) => {
@@ -50,7 +52,7 @@ function Sightings({ user }) {
 
   const handleSelectCard = (id) => {
     setSelectedId(id);
-    const s = sightings.find(item => item.id === id);
+    const s = sightings.find(item => item.SightingID === id);
     setSpecies(s.species);
     setDescription(s.description || ''); 
     setLocationSearch(s.location);
@@ -68,40 +70,47 @@ function Sightings({ user }) {
     setImageFile(null);
   };
 
-  const handleSubmitSighting = (e) => {
+  const handleSubmitSighting = async (e) => {
     e.preventDefault();
 
     if (!species || !locationSearch || !date || !time) {
       alert("Please fill out all required fields marked with *");
       return;
     }
-    if (!locationDB.includes(locationSearch)) {
-      alert("Please select a valid location from the dropdown list.");
-      return;
-    }
 
-    const sightingData = {
-      id: selectedId ? selectedId : Date.now(),
-      species, 
-      description, 
-      location: locationSearch, 
-      date, 
-      time, 
-      imageFile
+    const newSighting = {
+      userId: user.id, 
+      species: species,
+      description: description,
+      location: locationSearch,
+      date: date,
+      time: time
     };
 
-    if (selectedId) {
-      setSightings(sightings.map(s => s.id === selectedId ? sightingData : s));
-    } else {
-      setSightings([sightingData, ...sightings]);
+    try {
+      if (selectedId) {
+        alert("Updating existing sightings coming soon!");
+      } else {
+        await addSightingDB(newSighting);
+        const updatedList = await getUserSightings(user.id);
+        setSightings(updatedList);
+      }
+      clearForm();
+    } catch (err) {
+      alert("Failed to save to database: " + err.message);
     }
-    clearForm();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (selectedId) {
-      setSightings(sightings.filter(s => s.id !== selectedId));
-      clearForm();
+      try {
+        await deleteSightingDB(selectedId);
+        const updatedList = await getUserSightings(user.id);
+        setSightings(updatedList);
+        clearForm();
+      } catch (err) {
+        alert("Failed to delete from database");
+      }
     }
   };
 

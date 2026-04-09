@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import { loginUser } from '../services/api'; // Import the API
 
 function Login({ setUser }) {
   const [username, setUsername] = useState('');
@@ -9,15 +10,16 @@ function Login({ setUser }) {
   
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     
-    if (username === '111' && password === '123') {
+    try {
+      const data = await loginUser(username, password);
       setError('');
-      setUser({ username: '111', id: 1 });
+      setUser({ username: data.user.username, id: data.user.id }); 
       navigate('/sightings'); 
-    } else {
-      setError('Invalid username or password');
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -45,8 +47,6 @@ function Login({ setUser }) {
           
           <button type="submit" className="submit-login-btn">Login</button>
         </form>
-        
-        <p className="hint-text">Hint:111 / p123</p>
       </div>
     </div>
   );

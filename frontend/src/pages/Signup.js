@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import './Login.css'; // We can reuse the Login CSS to keep it looking consistent!
+import './Login.css'; 
+import { signupUser } from '../services/api'; // Import the API
 
 function Signup({ setUser }) {
   const [username, setUsername] = useState('');
@@ -10,7 +11,7 @@ function Signup({ setUser }) {
   
   const navigate = useNavigate();
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
@@ -23,10 +24,18 @@ function Signup({ setUser }) {
       return;
     }
 
-    setError('');
-    setUser({ username: username, id: Date.now() });
-    navigate('/sightings'); 
+    try {
+      const data = await signupUser(username, password);
+      
+      setError('');
+      setUser({ username: username, id: data.userId });
+      navigate('/sightings'); 
+
+    } catch (err) {
+      setError(err.message);
+    }
   };
+
 
   return (
     <div className="login-page-container">
@@ -59,13 +68,8 @@ function Signup({ setUser }) {
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Type it again"
           />
-          
-          <button type="submit" className="submit-login-btn">Sign Up</button>
-        </form>
-        
-        <p className="hint-text">
-          Already have an account? <Link to="/login">Login here</Link>
-        </p>
+          <button type="submit" className="submit-login-btn">Sign Up</button></form>
+        <p className="hint-text"> Already have an account? <Link to="/login">Login here</Link></p>
       </div>
     </div>
   );

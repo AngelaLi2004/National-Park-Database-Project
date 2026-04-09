@@ -136,28 +136,31 @@
   margin-top: 2px;
 }
 
-.form-group input:not([type="radio"]), .autocomplete-wrapper {
+.form-group input:not([type="radio"]) {
   width: 60%;
   border: none;
   border-radius: 15px;
-  padding: 8px;
-  background-color: #ffffff;
+  padding: 10px;
+  background-color: #ffffff; 
   box-sizing: border-box;
-  background-color: transparent;
+  outline: none;
 }
-
 
 .autocomplete-wrapper {
   position: relative;
   padding: 0; 
-  background-color: transparent;
+  width: 60%;
+  background-color: transparent; 
 }
 
 .autocomplete-wrapper input {
-  width: 100%;
+  width: 100%; 
+  border: none;
   border-radius: 15px;
-  padding: 8px;
-  background-color: #ffffff;
+  padding: 10px;
+  background-color: #ffffff; 
+  box-sizing: border-box;
+  outline: none;
 }
 
 .location-dropdown {
