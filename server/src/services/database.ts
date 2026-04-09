@@ -3,7 +3,7 @@ import { User } from '../models/user';
 import { Sighting } from "../models/sighting";
 import pool from './connection';
 import { RowDataPacket, ResultSetHeader } from "mysql2";
-
+import { fetchImageByScientificName } from "./image";
 // login
 export async function getUserByUsername(username: string): Promise<User | null> {
   const query = `SELECT * FROM Users WHERE Username = ?`;
@@ -71,6 +71,29 @@ export async function searchSpecies(
   return rows as Species[];
 }
 
+export async function enrichSpeciesWithImages(speciesList: Species[]) {
+  return Promise.all(
+    speciesList.map(async (s) => {
+      if (s.Image) return s;
+
+      const image = await fetchImageByScientificName(
+        s.ScientificName
+      );
+
+      if (image) {
+        await pool.query(
+          "UPDATE Species SET Image = ? WHERE SpeciesID = ?",
+          [image, s.SpeciesID]
+        );
+      }
+
+      return {
+        ...s,
+        Image: image,
+      };
+    })
+  );
+}
 
 export async function getSpeciesByPark(
   park: string,

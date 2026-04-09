@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { searchSpecies, getSpeciesByPark } from "../services/database";
+import { searchSpecies, getSpeciesByPark, enrichSpeciesWithImages } from "../services/database";
 import { Species } from "../models/species";
 
 const router = Router();
@@ -28,7 +28,9 @@ router.get("/search", async (req: Request, res: Response) => {
       order as 'asc' | 'desc'
     );
 
-    res.status(200).json(species);
+    const enriched = await enrichSpeciesWithImages(species);
+
+    res.status(200).json(enriched);
   } catch (error) {
     res.status(500).json({ message: "Error searching species" });
     console.error('Error:', error);

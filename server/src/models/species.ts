@@ -4,4 +4,5 @@ export interface Species {
     CommonName: string;
     Category: string;
     OrderName: string;
+    Image: string;
 }
