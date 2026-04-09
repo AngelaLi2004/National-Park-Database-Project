@@ -1,4 +1,5 @@
 import { Species } from "../models/species";
+import { User } from '../models/user';
 import pool from './connection';
 import { RowDataPacket } from "mysql2";
 
@@ -35,3 +36,17 @@ export async function getSpeciesByCommonName(speciesName: string): Promise<Speci
   return rows as Species[];
 }
 
+// login
+export async function getUserByUsername(username: string): Promise<User | null> {
+  const query = `SELECT * FROM Users WHERE Username = ?`;
+  const [rows] = await pool.query(query, [username]);
+  const users = rows as User[];
+  return users.length > 0 ? users[0] : null; 
+}
+
+// signup
+export async function createUser(username: string, hashedPassword: string): Promise<number> {
+  const query = `INSERT INTO Users (Username, Password) VALUES (?, ?)`;
+  const [result] = await pool.execute(query, [username, hashedPassword]);
+  return (result as any).insertId;
+}
