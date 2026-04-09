@@ -66,4 +66,14 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
+router.post('/logout', (req: Request, res: Response) => {
+    try {
+        res.status(200).json({ 
+            message: 'Logged out successfully. Please clear your local storage.' 
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error during logout' });
+    }
+});
+
 export default router;
