@@ -8,3 +8,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+.env*
+build
+*/node_modules
+*/public
