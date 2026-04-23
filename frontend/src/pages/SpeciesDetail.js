@@ -138,6 +138,57 @@ function SpeciesDetail() {
 
   const hasMapData = Boolean(parkGeometry || sightingPins.length > 0);
 
+  const mostRecentSightingText = detail?.mostRecentSighting?.SightingDate
+    ? new Date(detail.mostRecentSighting.SightingDate).toLocaleString()
+    : 'No sighting data available';
+
+  const lastObservedLocationText = detail?.mostRecentSighting?.LocationName
+    ? `${detail.mostRecentSighting.LocationName}${detail?.mostRecentSighting?.ParkName ? `, ${detail.mostRecentSighting.ParkName}` : ''}`
+    : 'No sighting data available';
+
+  const selectedParkLabel = park?.ParkName || state?.selectedPark || 'No park selected';
+
+  const monthlyBars = useMemo(() => {
+    const source = detail?.monthlyDistribution || [];
+    const monthMap = new Map(
+      source.map((item) => [Number(item.Month), Number(item.SightingCount)])
+    );
+
+    const fullMonths = Array.from({ length: 12 }, (_, i) => ({
+      label: String(i + 1),
+      value: monthMap.get(i + 1) || 0,
+    }));
+
+    const maxValue = Math.max(...fullMonths.map((item) => item.value), 1);
+
+    return fullMonths.map((item) => ({
+      ...item,
+      heightPercent: item.value > 0 ? (item.value / maxValue) * 100 : 0,
+    }));
+  }, [detail?.monthlyDistribution]);
+
+  const hourlyBars = useMemo(() => {
+    const source = detail?.hourlyDistribution || [];
+    const hourMap = new Map(
+      source.map((item) => [Number(item.Hour), Number(item.SightingCount)])
+    );
+
+    const fullHours = Array.from({ length: 24 }, (_, i) => ({
+      label: String(i),
+      value: hourMap.get(i) || 0,
+    }));
+
+    const maxValue = Math.max(...fullHours.map((item) => item.value), 1);
+
+    return fullHours.map((item) => ({
+      ...item,
+      heightPercent: item.value > 0 ? (item.value / maxValue) * 100 : 0,
+    }));
+  }, [detail?.hourlyDistribution]);
+
+  const hasMonthlyData = monthlyBars.some((item) => item.value > 0);
+  const hasHourlyData = hourlyBars.some((item) => item.value > 0);
+
   if (!species) {
     return (
       <div className="species-detail-page">
@@ -148,16 +199,6 @@ function SpeciesDetail() {
       </div>
     );
   }
-
-  const mostRecentSightingText = detail?.mostRecentSighting?.SightingDate
-    ? new Date(detail.mostRecentSighting.SightingDate).toLocaleString()
-    : 'No sighting data available';
-
-  const lastObservedLocationText = detail?.mostRecentSighting?.LocationName
-    ? `${detail.mostRecentSighting.LocationName}${detail?.mostRecentSighting?.ParkName ? `, ${detail.mostRecentSighting.ParkName}` : ''}`
-    : 'No sighting data available';
-
-  const selectedParkLabel = park?.ParkName || state?.selectedPark || 'No park selected';
 
   return (
     <div className="species-detail-page">
@@ -200,14 +241,52 @@ function SpeciesDetail() {
             <div className="detail-box">{lastObservedLocationText}</div>
           </div>
 
-          <div className="detail-info-row">
+          <div className="detail-chart-row">
             <span className="detail-label">Best Time of Year to Spot:</span>
-            <div className="detail-blank-box"></div>
+            <div className="detail-chart-box">
+              {hasMonthlyData ? (
+                <div className="mini-chart">
+                  {monthlyBars.map((item) => (
+                    <div key={item.label} className="mini-bar-group">
+                      <div className="mini-bar-track">
+                        <div
+                          className="mini-bar-fill"
+                          style={{ height: `${item.heightPercent}%` }}
+                          title={`Month ${item.label}: ${item.value}`}
+                        ></div>
+                      </div>
+                      <div className="mini-bar-label">{item.label}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="chart-empty-state">No sighting data yet</div>
+              )}
+            </div>
           </div>
 
-          <div className="detail-info-row">
+          <div className="detail-chart-row">
             <span className="detail-label">Time of Day:</span>
-            <div className="detail-blank-box"></div>
+            <div className="detail-chart-box">
+              {hasHourlyData ? (
+                <div className="mini-chart mini-chart-hourly">
+                  {hourlyBars.map((item) => (
+                    <div key={item.label} className="mini-bar-group">
+                      <div className="mini-bar-track">
+                        <div
+                          className="mini-bar-fill"
+                          style={{ height: `${item.heightPercent}%` }}
+                          title={`${item.label}:00 - ${item.value}`}
+                        ></div>
+                      </div>
+                      <div className="mini-bar-label small-hour-label">{item.label}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="chart-empty-state">No sighting data yet</div>
+              )}
+            </div>
           </div>
 
           <div className="detail-info-row map-row">
