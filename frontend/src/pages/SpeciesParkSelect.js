@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import './SpeciesParkSelect.css';
 
+
 function SpeciesParkSelect() {
   const navigate = useNavigate();
   const { state } = useLocation();
