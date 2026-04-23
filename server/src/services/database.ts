@@ -135,6 +135,24 @@ export async function getAllNationalParks(): Promise<string[]> {
   const [rows] = await pool.query<RowDataPacket[]>(sql);
   return (rows as NationalPark[]).map((park) => park.ParkName);
 }
+export async function getParksBySpeciesId(speciesId: number) {
+  const sqlQuery = `
+    SELECT DISTINCT
+      p.ParkCode,
+      p.ParkName,
+      p.State,
+      p.Image,
+      p.Description
+    FROM national_park_species_database.NationalParks p
+    JOIN national_park_species_database.ParkSpecies ps
+      ON p.ParkCode = ps.ParkCode
+    WHERE ps.SpeciesID = ?
+    ORDER BY p.ParkName ASC
+  `;
+
+  const [rows] = await pool.query<RowDataPacket[]>(sqlQuery, [speciesId]);
+  return rows;
+}
 
 // Sightings
 export async function getSightingsBySpeciesAndPark(
@@ -253,4 +271,84 @@ export async function searchLocations(
 
   const [rows] = await pool.query<RowDataPacket[]>(sqlQuery, queryParams);
   return rows;
+}
+
+// Detail page: species stats filtered by park
+export async function getSpeciesDetailByPark(
+  speciesId: number,
+  parkCode: string
+) {
+  // Query 1: Most Recent Sighting + Last Observed Location
+  const recentSightingSQL = `
+    SELECT 
+      s.SightingDate,
+      l.Name AS LocationName,
+      np.ParkName
+    FROM national_park_species_database.Sightings s
+    JOIN national_park_species_database.Locations l ON s.LocationID = l.LocationID
+    JOIN national_park_species_database.NationalParks np ON l.ParkCode = np.ParkCode
+    WHERE s.SpeciesID = ? AND l.ParkCode = ?
+    ORDER BY s.SightingDate DESC
+    LIMIT 1;
+  `;
+
+  // Query 2: Best Time of Year (sighting count grouped by month)
+  const monthlySQL = `
+    SELECT 
+      MONTH(s.SightingDate) AS Month,
+      COUNT(*) AS SightingCount
+    FROM national_park_species_database.Sightings s
+    JOIN national_park_species_database.Locations l ON s.LocationID = l.LocationID
+    WHERE s.SpeciesID = ? AND l.ParkCode = ?
+    GROUP BY MONTH(s.SightingDate)
+    ORDER BY Month;
+  `;
+
+  // Query 3: Time of Day (sighting count grouped by hour)
+  const hourlySQL = `
+    SELECT 
+      HOUR(s.SightingDate) AS Hour,
+      COUNT(*) AS SightingCount
+    FROM national_park_species_database.Sightings s
+    JOIN national_park_species_database.Locations l ON s.LocationID = l.LocationID
+    WHERE s.SpeciesID = ? AND l.ParkCode = ?
+    GROUP BY HOUR(s.SightingDate)
+    ORDER BY Hour;
+  `;
+
+  // Query 4: Park geometry (for the map)
+  // Park image
+  const parkInfoSQL = `
+    SELECT Image
+    FROM national_park_species_database.NationalParks
+    WHERE ParkCode = ?;
+  `;
+
+  // Sighting pins: distinct locations with extracted lat/lng
+  const pinsSQL = `
+    SELECT DISTINCT
+      l.LocationID,
+      l.Name AS LocationName,
+      CAST(JSON_EXTRACT(l.Geometry, '$.coordinates[0]') AS DECIMAL(10,6)) AS Longitude,
+      CAST(JSON_EXTRACT(l.Geometry, '$.coordinates[1]') AS DECIMAL(10,6)) AS Latitude,
+      COUNT(s.SightingID) AS SightingCount
+    FROM national_park_species_database.Sightings s
+    JOIN national_park_species_database.Locations l ON s.LocationID = l.LocationID
+    WHERE s.SpeciesID = ? AND l.ParkCode = ?
+    GROUP BY l.LocationID, l.Name, l.Geometry;
+  `;
+
+  const [recentRows] = await pool.query<RowDataPacket[]>(recentSightingSQL, [speciesId, parkCode]);
+  const [monthlyRows] = await pool.query<RowDataPacket[]>(monthlySQL, [speciesId, parkCode]);
+  const [hourlyRows] = await pool.query<RowDataPacket[]>(hourlySQL, [speciesId, parkCode]);
+  const [parkRows] = await pool.query<RowDataPacket[]>(parkInfoSQL, [parkCode]);
+  const [pinsRows] = await pool.query<RowDataPacket[]>(pinsSQL, [speciesId, parkCode]);
+
+  return {
+    mostRecentSighting: recentRows[0] || null,       // SightingDate, LocationName, ParkName
+    monthlyDistribution: monthlyRows,                 // [{Month: 1, SightingCount: 3}, ...]
+    hourlyDistribution: hourlyRows,                   // [{Hour: 14, SightingCount: 5}, ...]
+    parkInfo: parkRows[0] || null,                    // Geometry, Image
+    sightingPins: pinsRows,
+  };
 }

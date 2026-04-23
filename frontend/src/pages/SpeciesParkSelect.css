@@ -1,0 +1,161 @@
+.species-park-page {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.species-park-back-btn {
+  width: 100%;
+  max-width: 1200px;
+  background: none;
+  border: none;
+  color: #556b44;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.species-park-back-btn:hover {
+  text-decoration: underline;
+}
+
+.species-park-content {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  gap: 30px;
+}
+
+.species-park-left {
+  flex: 1;
+  background-color: #e5ecd9;
+  border-radius: 15px;
+  padding: 25px;
+}
+
+.species-park-pill {
+  display: inline-block;
+  background-color: #899c75;
+  color: white;
+  font-weight: bold;
+  padding: 6px 14px;
+  border-radius: 14px;
+  margin-bottom: 15px;
+}
+
+.species-park-image-box {
+  width: 100%;
+  height: 220px;
+  background-color: #899c75;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.species-park-main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.species-park-image-placeholder {
+  color: white;
+  font-weight: bold;
+}
+
+.species-park-text h2 {
+  margin: 0 0 8px 0;
+  color: #2b3a20;
+}
+
+.species-park-subtitle {
+  margin: 0 0 12px 0;
+  color: #556b44;
+  font-style: italic;
+}
+
+.species-park-description {
+  color: #2b3a20;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.species-park-right {
+  flex: 1.6;
+  background-color: #e5ecd9;
+  border-radius: 15px;
+  padding: 25px;
+}
+
+.species-park-title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #2b3a20;
+}
+
+.species-park-message {
+  color: #556b44;
+  font-weight: bold;
+}
+
+.species-park-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.park-select-card {
+  background-color: #d7e0c8;
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.park-select-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.park-select-image-box {
+  width: 100%;
+  height: 180px;
+  background-color: #899c75;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.park-select-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.park-select-placeholder {
+  color: white;
+  font-weight: bold;
+}
+
+.park-select-name {
+  background-color: #eef3e4;
+  color: #2b3a20;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px 14px;
+  border-radius: 14px;
+}
+
+.species-park-empty {
+  margin-top: 60px;
+  text-align: center;
+}

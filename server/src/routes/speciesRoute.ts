@@ -1,10 +1,5 @@
 import { Router, Request, Response } from "express";
-import {
-  searchSpecies,
-  getSpeciesByPark,
-  enrichSpeciesWithImages,
-  getAllNationalParks,
-} from "../services/database";
+import { getAllNationalParks, searchSpecies, getSpeciesByPark, enrichSpeciesWithImages, getSpeciesDetailByPark, getParksBySpeciesId } from "../services/database";
 import { Species } from "../models/species";
 
 const router = Router();
@@ -79,6 +74,40 @@ router.get("/parks", async (_req: Request, res: Response) => {
     res.status(200).json(parks);
   } catch (error) {
     res.status(500).json({ message: "Error fetching national parks" });
+  }
+});
+router.get("/:speciesId/parks", async (req: Request, res: Response) => {
+  try {
+    const speciesId = Number(req.params.speciesId);
+
+    if (!speciesId) {
+      return res.status(400).json({ message: "Valid speciesId is required" });
+    }
+
+    const parks = await getParksBySpeciesId(speciesId);
+    res.status(200).json(parks);
+  } catch (error) {
+    console.error("Error fetching parks by speciesId:", error);
+    res.status(500).json({ message: "Error fetching parks for species" });
+  }
+});
+
+// GET /api/species/detail?speciesId=123&parkCode=GLAC
+router.get("/detail", async (req: Request, res: Response) => {
+  const { speciesId, parkCode } = req.query;
+
+  if (!speciesId || !parkCode) {
+    return res.status(400).json({ message: "speciesId and parkCode are required" });
+  }
+
+  try {
+    const detail = await getSpeciesDetailByPark(
+      Number(speciesId),
+      parkCode as string
+    );
+    res.status(200).json(detail);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching species detail" });
     console.error('Error:', error);
   }
 });
