@@ -305,21 +305,38 @@ export async function getSpeciesDetailByPark(
   `;
 
   // Query 4: Park geometry (for the map)
-  const parkGeoSQL = `
-    SELECT Geometry, Image
+  // Park image
+  const parkInfoSQL = `
+    SELECT Image
     FROM national_park_species_database.NationalParks
     WHERE ParkCode = ?;
+  `;
+
+  // Sighting pins: distinct locations with extracted lat/lng
+  const pinsSQL = `
+    SELECT DISTINCT
+      l.LocationID,
+      l.Name AS LocationName,
+      CAST(JSON_EXTRACT(l.Geometry, '$.coordinates[0]') AS DECIMAL(10,6)) AS Longitude,
+      CAST(JSON_EXTRACT(l.Geometry, '$.coordinates[1]') AS DECIMAL(10,6)) AS Latitude,
+      COUNT(s.SightingID) AS SightingCount
+    FROM national_park_species_database.Sightings s
+    JOIN national_park_species_database.Locations l ON s.LocationID = l.LocationID
+    WHERE s.SpeciesID = ? AND l.ParkCode = ?
+    GROUP BY l.LocationID, l.Name, l.Geometry;
   `;
 
   const [recentRows] = await pool.query<RowDataPacket[]>(recentSightingSQL, [speciesId, parkCode]);
   const [monthlyRows] = await pool.query<RowDataPacket[]>(monthlySQL, [speciesId, parkCode]);
   const [hourlyRows] = await pool.query<RowDataPacket[]>(hourlySQL, [speciesId, parkCode]);
-  const [parkRows] = await pool.query<RowDataPacket[]>(parkGeoSQL, [parkCode]);
+  const [parkRows] = await pool.query<RowDataPacket[]>(parkInfoSQL, [parkCode]);
+  const [pinsRows] = await pool.query<RowDataPacket[]>(pinsSQL, [speciesId, parkCode]);
 
   return {
     mostRecentSighting: recentRows[0] || null,       // SightingDate, LocationName, ParkName
     monthlyDistribution: monthlyRows,                 // [{Month: 1, SightingCount: 3}, ...]
     hourlyDistribution: hourlyRows,                   // [{Hour: 14, SightingCount: 5}, ...]
     parkInfo: parkRows[0] || null,                    // Geometry, Image
+    sightingPins: pinsRows,
   };
 }
