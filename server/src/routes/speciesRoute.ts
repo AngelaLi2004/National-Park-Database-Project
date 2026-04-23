@@ -1,5 +1,10 @@
 import { Router, Request, Response } from "express";
-import { searchSpecies, getSpeciesByPark, enrichSpeciesWithImages } from "../services/database";
+import {
+  searchSpecies,
+  getSpeciesByPark,
+  enrichSpeciesWithImages,
+  getAllNationalParks,
+} from "../services/database";
 import { Species } from "../models/species";
 
 const router = Router();
@@ -67,4 +72,15 @@ router.get("/by-park", async (req: Request, res: Response) => {
     console.error('Error:', error);
   }
 });
+
+router.get("/parks", async (_req: Request, res: Response) => {
+  try {
+    const parks = await getAllNationalParks();
+    res.status(200).json(parks);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching national parks" });
+    console.error('Error:', error);
+  }
+});
+
 export default router;

@@ -44,12 +44,15 @@ function Species() {
 
   useEffect(() => {
     if (searchResults.length > 0) {
-      const sortedArray = [...searchResults].sort((a, b) => {
-        return sortOrder === 'ASC'
-          ? a.ScientificName.localeCompare(b.ScientificName)
-          : b.ScientificName.localeCompare(a.ScientificName);
+      setSearchResults((prevResults) => {
+        const sortedArray = [...prevResults].sort((a, b) => {
+          return sortOrder === 'ASC'
+            ? a.ScientificName.localeCompare(b.ScientificName)
+            : b.ScientificName.localeCompare(a.ScientificName);
+        });
+
+        return sortedArray;
       });
-      setSearchResults(sortedArray);
     }
   }, [sortOrder]);
 

@@ -1,6 +1,7 @@
 import { Species } from "../models/species";
 import { User } from '../models/user';
 import { Sighting } from "../models/sighting";
+import { NationalPark } from "../models/nationalpark";
 import pool from './connection';
 import { RowDataPacket, ResultSetHeader } from "mysql2";
 import { fetchImageByScientificName } from "./image";
@@ -121,6 +122,18 @@ export async function getSpeciesByPark(
   
   const [rows] = await pool.query<RowDataPacket[]>(sqlQuery, queryParams);
   return rows as Species[];
+}
+
+export async function getAllNationalParks(): Promise<string[]> {
+  const sql = `
+    SELECT DISTINCT ParkName
+    FROM national_park_species_database.NationalParks
+    WHERE ParkName IS NOT NULL AND TRIM(ParkName) <> ''
+    ORDER BY ParkName ASC;
+  `;
+
+  const [rows] = await pool.query<RowDataPacket[]>(sql);
+  return (rows as NationalPark[]).map((park) => park.ParkName);
 }
 
 // Sightings

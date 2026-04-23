@@ -1,60 +1,85 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './NationParks.css';
-import { searchByParkDB } from '../services/api';
+import { searchByParkDB, getAllNationalParks } from '../services/api';
 
 function NationalParks() {
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedState, setSelectedState] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('ASC');
 
   const [hasSearched, setHasSearched] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [searchResults, setSearchResults] = useState([]);
+  const [parkOptions, setParkOptions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [parkLoadError, setParkLoadError] = useState('');
+  const [selectedPark, setSelectedPark] = useState('');
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (searchTerm.trim().length > 0) {
-        const results = await searchByParkDB(searchTerm, selectedCategory, sortOrder);
-        const uniqueResults = Array.from(
-          new Map(results.map(item => [item.SpeciesID, item])).values()
-        );
-
-        setSearchResults(uniqueResults);
-        setHasSearched(true);
-      } else {
-        setSearchResults([]);
-        setHasSearched(false);
+    const fetchParks = async () => {
+      try {
+        const parks = await getAllNationalParks();
+        setParkOptions(parks);
+        setParkLoadError('');
+      } catch (error) {
+        console.error('Failed to fetch park list:', error);
+        setParkLoadError('Park suggestions are unavailable right now, but you can still search by typing a park name.');
       }
-    }, 400);
+    };
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, selectedCategory, sortOrder]);
+    fetchParks();
+  }, []);
 
   useEffect(() => {
     if (searchResults.length > 0) {
-      const sortedArray = [...searchResults].sort((a, b) => {
-        return sortOrder === 'ASC'
-          ? a.ScientificName.localeCompare(b.ScientificName)
-          : b.ScientificName.localeCompare(a.ScientificName);
+      setSearchResults((prevResults) => {
+        const sortedArray = [...prevResults].sort((a, b) => {
+          return sortOrder === 'ASC'
+            ? a.ScientificName.localeCompare(b.ScientificName)
+            : b.ScientificName.localeCompare(a.ScientificName);
+        });
+
+        return sortedArray;
       });
-      setSearchResults(sortedArray);
     }
   }, [sortOrder]);
 
+  const filteredParkOptions = parkOptions
+    .filter((park) => park.toLowerCase().includes(searchTerm.trim().toLowerCase()))
+    .slice(0, 100);
+
   const handleSearch = async () => {
-    if (searchTerm.trim().length > 0) {
-      const results = await searchByParkDB(searchTerm, selectedCategory, sortOrder);
+    const trimmed = searchTerm.trim();
+
+    if (!trimmed) return;
+
+    if (!selectedPark || selectedPark !== trimmed) {
+      alert('Please select a national park from the dropdown list before searching.');
+      return;
+    }
+
+    try {
+      const results = await searchByParkDB(selectedPark, selectedCategory, sortOrder);
+
       const uniqueResults = Array.from(
         new Map(results.map(item => [item.SpeciesID, item])).values()
       );
 
       setSearchResults(uniqueResults);
       setHasSearched(true);
+      setShowSuggestions(false);
+    } catch (error) {
+      console.error('Search failed:', error);
     }
+  };
+
+  const handleSuggestionClick = (park) => {
+    setSearchTerm(park);
+    setSelectedPark(park);
+    setShowSuggestions(false);
   };
 
   const handleCardClick = (species) => {
@@ -69,12 +94,6 @@ function NationalParks() {
     '/park/3.jpg',
     '/park/4.webp',
     '/park/5.webp'
-  ];
-
-  const usStates = [
-    'AK', 'AR', 'AZ', 'CA', 'CO', 'FL', 'HI', 'ID', 'IN', 'KY',
-    'ME', 'MI', 'MN', 'MO', 'MT', 'NC', 'ND', 'NM', 'NV', 'OH',
-    'OR', 'SC', 'SD', 'TN', 'TX', 'UT', 'VA', 'VI', 'WA', 'WY'
   ];
 
   const categories = [
@@ -108,21 +127,54 @@ function NationalParks() {
       <div className="search-section">
         <div className="main-search-row">
           <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            placeholder="Search by park name (e.g. Yellowstone)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+
+          <div className="park-search-input-wrap">
+            <input
+              type="text"
+              placeholder="Search a national park..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setSelectedPark('');
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => {
+                setTimeout(() => setShowSuggestions(false), 150);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
+              }}
+            />
+
+            {showSuggestions && filteredParkOptions.length > 0 && (
+              <div className="park-suggestions">
+                {filteredParkOptions.map((park) => (
+                  <button
+                    key={park}
+                    type="button"
+                    className="park-suggestion-item"
+                    onMouseDown={() => handleSuggestionClick(park)}
+                  >
+                    {park}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="sort-toggle">
             <button
+              type="button"
               className={sortOrder === 'ASC' ? 'active' : ''}
               onClick={() => setSortOrder('ASC')}
             >
               A-Z
             </button>
             <button
+              type="button"
               className={sortOrder === 'DESC' ? 'active' : ''}
               onClick={() => setSortOrder('DESC')}
             >
@@ -135,18 +187,13 @@ function NationalParks() {
           </button>
         </div>
 
+        {parkLoadError && <p className="park-search-message">{parkLoadError}</p>}
+
         <div className="filters-row">
           <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
             <option value="ALL">All Categories</option>
             {categories.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-
-          <select value={selectedState} onChange={(e) => setSelectedState(e.target.value)}>
-            <option value="ALL">All States</option>
-            {usStates.map(state => (
-              <option key={state} value={state}>{state}</option>
             ))}
           </select>
         </div>

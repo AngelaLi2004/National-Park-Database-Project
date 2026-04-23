@@ -36,6 +36,17 @@ export const searchByParkDB = async (park, category, order) => {
   }
 };
 
+export const getAllNationalParks = async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/species/parks`);
+    if (!response.ok) throw new Error("Failed to fetch national parks");
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
 export const searchLocationsDB = async (name, parkCode) => {
   try {
     const params = new URLSearchParams();
