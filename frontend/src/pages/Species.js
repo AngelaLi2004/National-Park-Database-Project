@@ -46,8 +46,8 @@ function Species() {
     if (searchResults.length > 0) {
       const sortedArray = [...searchResults].sort((a, b) => {
         return sortOrder === 'ASC'
-          ? a.CommonName.localeCompare(b.CommonName)
-          : b.CommonName.localeCompare(a.CommonName);
+          ? a.ScientificName.localeCompare(b.ScientificName)
+          : b.ScientificName.localeCompare(a.ScientificName);
       });
       setSearchResults(sortedArray);
     }
@@ -79,38 +79,53 @@ function Species() {
   };
 
   const carouselImages = [
-    "/animal/1.jpg",
-    "/animal/2.jpg",
-    "/animal/3.png",
-    "/animal/4.jpg",
-    "/animal/5.jpg"];
+    '/animal/1.jpg',
+    '/animal/2.jpg',
+    '/animal/3.png',
+    '/animal/4.jpg',
+    '/animal/5.jpg'
+  ];
 
   const categories = [
-    "Algae",
-    "Bird",
-    "Crab/Lobster/Shrimp",
-    "Fish",
-    "Fungi",
-    "Insect",
-    "Invertebrate",
-    "Mammal",
-    "Nonvascular Plant",
-    "Reptile",
-    "Slug/Snail",
-    "Spider/Scorpion",
-    "Vascular Plant"];
+    'Algae',
+    'Bird',
+    'Crab/Lobster/Shrimp',
+    'Fish',
+    'Fungi',
+    'Insect',
+    'Invertebrate',
+    'Mammal',
+    'Nonvascular Plant',
+    'Reptile',
+    'Slug/Snail',
+    'Spider/Scorpion',
+    'Vascular Plant'
+  ];
 
   const nationalParks = [
-    "Acadia", "Arches",
-    "Badlands", "Big Bend",
-    "Biscayne", "Bryce Canyon",
-    "Canyonlands", "Capitol Reef",
-    "Carlsbad Caverns", "Channel Islands",
-    "Death Valley", "Denali",
-    "Everglades", "Glacier",
-    "Grand Canyon", "Grand Teton",
-    "Great Smoky Mountains", "Joshua Tree",
-    "Olympic", "Rocky Mountain", "Yellowstone", "Yosemite", "Zion"
+    'Acadia',
+    'Arches',
+    'Badlands',
+    'Big Bend',
+    'Biscayne',
+    'Bryce Canyon',
+    'Canyonlands',
+    'Capitol Reef',
+    'Carlsbad Caverns',
+    'Channel Islands',
+    'Death Valley',
+    'Denali',
+    'Everglades',
+    'Glacier',
+    'Grand Canyon',
+    'Grand Teton',
+    'Great Smoky Mountains',
+    'Joshua Tree',
+    'Olympic',
+    'Rocky Mountain',
+    'Yellowstone',
+    'Yosemite',
+    'Zion'
   ];
 
   useEffect(() => {
@@ -145,7 +160,7 @@ function Species() {
           <span className="search-icon">🔍</span>
           <input
             type="text"
-            placeholder={searchType === 'common' ? "e.g. Elk" : "e.g. Cervus canadensis"}
+            placeholder={searchType === 'common' ? 'e.g. Elk' : 'e.g. Cervus canadensis'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -221,14 +236,14 @@ function Species() {
                       <img
                         src={animal.Image}
                         alt={animal.CommonName}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                        className="card-real-img"
                       />
                     ) : (
                       'Image'
                     )}
                   </div>
-                  <h3>{animal.CommonName}</h3>
-                  <p className="scientific-name">{animal.ScientificName}</p>
+                  <h3>{animal.ScientificName}</h3>
+                  <p className="scientific-name">{animal.CommonName}</p>
                   <p className="category-text">Category: {animal.Category}</p>
                 </div>
               ))}

@@ -65,7 +65,7 @@ export async function searchSpecies(
   const orderDirection = order === 'desc' ? 'DESC' : 'ASC';
   
   sqlQuery += ` ORDER BY s.${orderByField} ${orderDirection}`;
-  sqlQuery += ` LIMIT 50;`;
+  sqlQuery += ` LIMIT 200;`;
 
   const [rows] = await pool.query<RowDataPacket[]>(sqlQuery, queryParams);
   return rows as Species[];
@@ -117,7 +117,7 @@ export async function getSpeciesByPark(
     queryParams.push(category.toLowerCase());
   }
 
-  sqlQuery += ` ORDER BY s.CommonName ${orderDirection} LIMIT 50;`;
+  sqlQuery += ` ORDER BY s.CommonName ${orderDirection} LIMIT 200;`;
   
   const [rows] = await pool.query<RowDataPacket[]>(sqlQuery, queryParams);
   return rows as Species[];
@@ -236,7 +236,7 @@ export async function searchLocations(
     queryParams.push(parkCode);
   }
 
-  sqlQuery += ` ORDER BY Name ASC LIMIT 20;`;
+  sqlQuery += ` ORDER BY Name ASC LIMIT 100;`;
 
   const [rows] = await pool.query<RowDataPacket[]>(sqlQuery, queryParams);
   return rows;

@@ -38,8 +38,8 @@ function NationalParks() {
     if (searchResults.length > 0) {
       const sortedArray = [...searchResults].sort((a, b) => {
         return sortOrder === 'ASC'
-          ? a.CommonName.localeCompare(b.CommonName)
-          : b.CommonName.localeCompare(a.CommonName);
+          ? a.ScientificName.localeCompare(b.ScientificName)
+          : b.ScientificName.localeCompare(a.ScientificName);
       });
       setSearchResults(sortedArray);
     }
@@ -64,33 +64,33 @@ function NationalParks() {
   };
 
   const carouselImages = [
-    "/park/1.jpg",
-    "/park/2.jpg",
-    "/park/3.jpg",
-    "/park/4.webp",
-    "/park/5.webp"
+    '/park/1.jpg',
+    '/park/2.jpg',
+    '/park/3.jpg',
+    '/park/4.webp',
+    '/park/5.webp'
   ];
 
   const usStates = [
-    "AK", "AR", "AZ", "CA", "CO", "FL", "HI", "ID", "IN", "KY",
-    "ME", "MI", "MN", "MO", "MT", "NC", "ND", "NM", "NV", "OH",
-    "OR", "SC", "SD", "TN", "TX", "UT", "VA", "VI", "WA", "WY"
+    'AK', 'AR', 'AZ', 'CA', 'CO', 'FL', 'HI', 'ID', 'IN', 'KY',
+    'ME', 'MI', 'MN', 'MO', 'MT', 'NC', 'ND', 'NM', 'NV', 'OH',
+    'OR', 'SC', 'SD', 'TN', 'TX', 'UT', 'VA', 'VI', 'WA', 'WY'
   ];
 
   const categories = [
-    "Algae",
-    "Bird",
-    "Crab/Lobster/Shrimp",
-    "Fish",
-    "Fungi",
-    "Insect",
-    "Invertebrate",
-    "Mammal",
-    "Nonvascular Plant",
-    "Reptile",
-    "Slug/Snail",
-    "Spider/Scorpion",
-    "Vascular Plant"
+    'Algae',
+    'Bird',
+    'Crab/Lobster/Shrimp',
+    'Fish',
+    'Fungi',
+    'Insect',
+    'Invertebrate',
+    'Mammal',
+    'Nonvascular Plant',
+    'Reptile',
+    'Slug/Snail',
+    'Spider/Scorpion',
+    'Vascular Plant'
   ];
 
   useEffect(() => {
@@ -186,14 +186,14 @@ function NationalParks() {
                       <img
                         src={species.Image}
                         alt={species.CommonName}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                        className="card-real-img"
                       />
                     ) : (
                       'Image'
                     )}
                   </div>
-                  <h3>{species.CommonName}</h3>
-                  <p className="scientific-name">{species.ScientificName}</p>
+                  <h3>{species.ScientificName}</h3>
+                  <p className="scientific-name">{species.CommonName}</p>
                   <p className="category-text">Category: {species.Category}</p>
                 </div>
               ))}

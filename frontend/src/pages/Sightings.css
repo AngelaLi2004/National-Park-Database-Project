@@ -87,6 +87,15 @@
   align-items: center;
   justify-content: center;
   color: white;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sighting-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
 }
 
 .card-info h4 {
@@ -168,6 +177,27 @@
   outline: none;
 }
 
+.input-with-status {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.autocomplete-input {
+  padding-right: 35px;
+}
+
+.status-icon {
+  position: absolute;
+  right: 10px;
+  font-size: 14px;
+}
+
+.dropdown-subtext {
+  font-size: 11px;
+  color: #888;
+}
+
 .location-dropdown {
   position: absolute;
   top: 100%;
@@ -176,7 +206,7 @@
   background-color: white;
   border: 1px solid #c2ccb1;
   border-radius: 5px;
-  max-height: 150px;
+  max-height: 280px;
   overflow-y: auto;
   margin: 0;
   padding: 0;

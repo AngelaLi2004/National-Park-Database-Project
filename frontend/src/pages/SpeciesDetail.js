@@ -38,12 +38,12 @@ function SpeciesDetail() {
           </div>
 
           <div className="species-text-block">
-            <h2>{species.CommonName}</h2>
-            <p className="species-scientific-name">{species.ScientificName}</p>
+            <h2>{species.ScientificName}</h2>
+            <p className="species-scientific-name">{species.CommonName}</p>
             <p><strong>Category:</strong> {species.Category}</p>
             {species.OrderName && <p><strong>Order:</strong> {species.OrderName}</p>}
             <p className="species-description">
-              The <strong>{species.CommonName}</strong> ({species.ScientificName}) is a species in the category <strong>{species.Category}</strong>.
+              The <strong>{species.ScientificName}</strong> ({species.CommonName}) is a species in the category <strong>{species.Category}</strong>.
             </p>
           </div>
         </div>

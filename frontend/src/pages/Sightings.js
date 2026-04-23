@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Sightings.css';
-import { getUserSightings, addSightingDB, deleteSightingDB, searchSpeciesDB, searchLocationsDB } from '../services/api';
+import {
+  getUserSightings,
+  addSightingDB,
+  deleteSightingDB,
+  searchSpeciesDB,
+  searchLocationsDB
+} from '../services/api';
 
 function Sightings({ user }) {
   const [sightings, setSightings] = useState([]);
@@ -33,6 +39,7 @@ function Sightings({ user }) {
         setSightings(userSightings);
       }
     };
+
     fetchSightings();
   }, [user]);
 
@@ -44,7 +51,7 @@ function Sightings({ user }) {
           const uniqueResults = Array.from(
             new Map(results.map(item => [item.SpeciesID, item])).values()
           );
-          setFilteredSpecies(uniqueResults.slice(0, 6));
+          setFilteredSpecies(uniqueResults.slice(0, 20));
           setShowSpeciesDropdown(true);
         } catch (error) {
           setFilteredSpecies([]);
@@ -66,7 +73,7 @@ function Sightings({ user }) {
           const uniqueResults = Array.from(
             new Map(results.map(item => [item.LocationID, item])).values()
           );
-          setFilteredLocations(uniqueResults.slice(0, 6));
+          setFilteredLocations(uniqueResults.slice(0, 20));
           setShowLocationDropdown(true);
         } catch (error) {
           setFilteredLocations([]);
@@ -79,6 +86,19 @@ function Sightings({ user }) {
 
     return () => clearTimeout(delayDebounceFn);
   }, [locationSearch, selectedValidLocation]);
+
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      if (!file) {
+        resolve(null);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
 
   const handleSelectSpecies = (item) => {
     setSpecies(item.CommonName);
@@ -107,23 +127,43 @@ function Sightings({ user }) {
     const spName = s?.species || s?.SpeciesName || '';
     setSpecies(spName);
     setSelectedValidSpecies(spName);
+    setSelectedSpeciesId(s?.SpeciesID || null);
 
     const locName = s?.location || s?.LocationName || '';
     setLocationSearch(locName);
     setSelectedValidLocation(locName);
+    setSelectedLocationId(s?.LocationID || null);
 
-    setDescription(s?.description || '');
-    setDate(s?.date || '');
-    setTime(s?.time || '');
+    setDescription(s?.description || s?.Description || '');
+
+    const rawDate = s?.date || s?.SightingDate || '';
+    if (rawDate) {
+      const parsedDate = new Date(rawDate);
+      if (!Number.isNaN(parsedDate.getTime())) {
+        const localDate = new Date(parsedDate.getTime() - parsedDate.getTimezoneOffset() * 60000);
+        setDate(localDate.toISOString().slice(0, 10));
+        setTime(localDate.toTimeString().slice(0, 5));
+      } else {
+        setDate('');
+        setTime('');
+      }
+    } else {
+      setDate('');
+      setTime('');
+    }
+
+    setImageFile(null);
   };
 
   const clearForm = () => {
     setSelectedId(null);
     setSpecies('');
     setSelectedValidSpecies('');
+    setSelectedSpeciesId(null);
     setDescription('');
     setLocationSearch('');
     setSelectedValidLocation('');
+    setSelectedLocationId(null);
     setDate('');
     setTime('');
     setImageFile(null);
@@ -141,26 +181,28 @@ function Sightings({ user }) {
       return;
     }
 
-    if (species !== selectedValidSpecies) {
+    if (species !== selectedValidSpecies || !selectedSpeciesId) {
       alert('Invalid Species. Please search and select an exact species from the dropdown list.');
       return;
     }
 
-    if (locationSearch !== selectedValidLocation) {
+    if (locationSearch !== selectedValidLocation || !selectedLocationId) {
       alert('Invalid Location. Please search and select an exact location from the dropdown list.');
       return;
     }
 
-    const newSighting = {
-      UserID: user.id,
-      SpeciesID: selectedSpeciesId,
-      LocationID: selectedLocationId,
-      SightingDate: `${date}T${time}:00`,
-      Description: description,
-      ImageURL: null
-    };
-
     try {
+      const imageBase64 = await fileToBase64(imageFile);
+
+      const newSighting = {
+        UserID: user.id,
+        SpeciesID: selectedSpeciesId,
+        LocationID: selectedLocationId,
+        SightingDate: `${date}T${time}:00`,
+        Description: description,
+        ImageURL: imageBase64
+      };
+
       if (selectedId) {
         alert('Updating existing sightings coming soon!');
       } else {
@@ -168,6 +210,7 @@ function Sightings({ user }) {
         const updatedList = await getUserSightings(user.id);
         setSightings(updatedList);
       }
+
       clearForm();
     } catch (err) {
       alert('Failed to save to database: ' + err.message);
@@ -219,12 +262,30 @@ function Sightings({ user }) {
                     onChange={() => handleSelectCard(item.id || item.SightingID)}
                   />
                 </div>
-                <div className="img-box">Image</div>
+
+                <div className="img-box">
+                  {item.ImageURL ? (
+                    <img
+                      src={item.ImageURL}
+                      alt={item.SpeciesName || item.species || 'Sighting'}
+                      className="sighting-card-img"
+                    />
+                  ) : (
+                    'Image'
+                  )}
+                </div>
+
                 <div className="card-info">
                   <h4>{item.species || item.SpeciesName}</h4>
-                  <div className="pill-info">{item.time} {item.date}</div>
+                  <div className="pill-info">
+                    {item.time || (item.SightingDate ? new Date(item.SightingDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')}
+                    {' '}
+                    {item.date || (item.SightingDate ? new Date(item.SightingDate).toLocaleDateString() : '')}
+                  </div>
                   <div className="location-text">📍 {item.location || item.LocationName}</div>
-                  {item.description && <div className="description-text">"{item.description}"</div>}
+                  {(item.description || item.Description) && (
+                    <div className="description-text">"{item.description || item.Description}"</div>
+                  )}
                 </div>
               </label>
             ))}
@@ -249,9 +310,11 @@ function Sightings({ user }) {
         ) : (
           <form className="add-form" onSubmit={handleSubmitSighting}>
             <div className="form-group autocomplete-group">
-              <label>Species <span className="required-asterisk">*</span></label>
+              <label>
+                Species <span className="required-asterisk">*</span>
+              </label>
               <div className="autocomplete-wrapper">
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="input-with-status">
                   <input
                     type="text"
                     value={species}
@@ -261,9 +324,9 @@ function Sightings({ user }) {
                       setSelectedSpeciesId(null);
                     }}
                     placeholder="Search from DB..."
-                    style={{ paddingRight: '35px' }}
+                    className="autocomplete-input"
                   />
-                  <span style={{ position: 'absolute', right: '10px', fontSize: '14px' }}>
+                  <span className="status-icon">
                     {species && species === selectedValidSpecies ? '✅' : (species ? '❌' : '')}
                   </span>
                 </div>
@@ -271,9 +334,9 @@ function Sightings({ user }) {
                 {showSpeciesDropdown && (
                   <ul className="location-dropdown">
                     {filteredSpecies.length > 0 ? (
-                      filteredSpecies.map((item, idx) => (
-                        <li key={idx} onClick={() => handleSelectSpecies(item)}>
-                          {item.CommonName} <span style={{ fontSize: '11px', color: '#888' }}>({item.ScientificName})</span>
+                      filteredSpecies.map((item) => (
+                        <li key={item.SpeciesID} onClick={() => handleSelectSpecies(item)}>
+                          {item.CommonName} <span className="dropdown-subtext">({item.ScientificName})</span>
                         </li>
                       ))
                     ) : (
@@ -300,17 +363,19 @@ function Sightings({ user }) {
             </div>
 
             <div className="form-group autocomplete-group">
-              <label>Location <span className="required-asterisk">*</span></label>
+              <label>
+                Location <span className="required-asterisk">*</span>
+              </label>
               <div className="autocomplete-wrapper">
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="input-with-status">
                   <input
                     type="text"
                     value={locationSearch}
                     onChange={handleLocationChange}
                     placeholder="Search from DB..."
-                    style={{ paddingRight: '35px' }}
+                    className="autocomplete-input"
                   />
-                  <span style={{ position: 'absolute', right: '10px', fontSize: '14px' }}>
+                  <span className="status-icon">
                     {locationSearch && locationSearch === selectedValidLocation ? '✅' : (locationSearch ? '❌' : '')}
                   </span>
                 </div>
@@ -318,9 +383,9 @@ function Sightings({ user }) {
                 {showLocationDropdown && (
                   <ul className="location-dropdown">
                     {filteredLocations.length > 0 ? (
-                      filteredLocations.map((item, idx) => (
-                        <li key={idx} onClick={() => handleSelectLocation(item)}>
-                          {item.Name} <span style={{ fontSize: '11px', color: '#888' }}>({item.Type})</span>
+                      filteredLocations.map((item) => (
+                        <li key={item.LocationID} onClick={() => handleSelectLocation(item)}>
+                          {item.Name} <span className="dropdown-subtext">({item.Type})</span>
                         </li>
                       ))
                     ) : (
@@ -332,14 +397,20 @@ function Sightings({ user }) {
             </div>
 
             <div className="form-group">
-              <label>Date <span className="required-asterisk">*</span><span className="format-hint">(YYYY-MM-DD)</span></label>
+              <label>
+                Date <span className="required-asterisk">*</span>
+                <span className="format-hint">(YYYY-MM-DD)</span>
+              </label>
               <div className="autocomplete-wrapper">
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
             </div>
 
             <div className="form-group">
-              <label>Time <span className="required-asterisk">*</span><span className="format-hint">(HH:MM AM/PM)</span></label>
+              <label>
+                Time <span className="required-asterisk">*</span>
+                <span className="format-hint">(HH:MM AM/PM)</span>
+              </label>
               <div className="autocomplete-wrapper">
                 <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
               </div>
@@ -348,6 +419,7 @@ function Sightings({ user }) {
             <div className="form-group">
               <label>Image</label>
               <input
+                className="file-input-native"
                 type="file"
                 accept="image/*"
                 onChange={(e) => setImageFile(e.target.files[0])}
