@@ -84,7 +84,10 @@ function NationalParks() {
 
   const handleCardClick = (species) => {
     navigate(`/species/${species.SpeciesID}`, {
-      state: { species }
+      state: {
+        species,
+        selectedPark,
+      }
     });
   };
 

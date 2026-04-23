@@ -1,198 +1,163 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import L from 'leaflet';
+import { GeoJSON, MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import 'leaflet/dist/leaflet.css';
 import './SpeciesDetail.css';
+import { getParksBySpeciesId, getSpeciesDetailByPark } from '../services/api';
+
+function MapViewportController({ parkGeometry, sightingPins }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const pinCoordinates = (sightingPins || [])
+      .map((pin) => [Number(pin.Latitude), Number(pin.Longitude)])
+      .filter(([lat, lng]) => !Number.isNaN(lat) && !Number.isNaN(lng));
+
+    if (pinCoordinates.length > 0) {
+      map.fitBounds(pinCoordinates, { padding: [24, 24] });
+      return;
+    }
+
+    if (parkGeometry) {
+      const bounds = L.geoJSON(parkGeometry).getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [24, 24] });
+      }
+    }
+  }, [map, parkGeometry, sightingPins]);
+
+  return null;
+}
 
 function SpeciesDetail() {
   const navigate = useNavigate();
-  const { state } = useLocation();
   const { speciesId } = useParams();
+  const { state } = useLocation();
 
   const species = state?.species;
-  const selectedPark = state?.selectedPark || '';
-  const initialPark = state?.park || null;
-
-  const [resolvedPark, setResolvedPark] = useState(initialPark);
-  const [detailData, setDetailData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [park, setPark] = useState(state?.park || null);
+  const [detail, setDetail] = useState(null);
+  const [isLoading, setIsLoading] = useState(Boolean(species && speciesId));
   const [error, setError] = useState('');
 
-  const normalizeParkName = (name) => {
-    if (!name) return '';
-    return name
-      .toLowerCase()
-      .replace(/\s+national\s+park/g, '')
-      .replace(/\s+np/g, '')
-      .replace(/[^\w\s]/g, '')
-      .trim();
-  };
-
   useEffect(() => {
-    const resolveParkInfo = async () => {
-      if (!species || !speciesId) {
-        setError('Missing species information.');
-        setLoading(false);
+    const fetchSelectedPark = async () => {
+      if (!speciesId || park) {
         return;
       }
 
-      if (initialPark?.ParkCode) {
-        setResolvedPark(initialPark);
-        return;
-      }
-
-      if (!selectedPark) {
-        setError('Missing species or park information.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`http://localhost:3007/api/species/${speciesId}/parks`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch park list for species');
+      const parks = await getParksBySpeciesId(speciesId);
+      const matchedPark = parks.find((parkOption) => {
+        if (state?.selectedPark) {
+          return parkOption.ParkName === state.selectedPark;
         }
 
-        const parks = await response.json();
+        return false;
+      });
 
-        const normalizedSelected = normalizeParkName(selectedPark);
-
-        const matchedPark =
-          parks.find(
-            (park) => normalizeParkName(park.ParkName) === normalizedSelected
-          ) ||
-          parks.find(
-            (park) =>
-              normalizeParkName(park.ParkName).includes(normalizedSelected) ||
-              normalizedSelected.includes(normalizeParkName(park.ParkName))
-          );
-
-        if (!matchedPark) {
-          setError('Could not match the selected park to this species.');
-          setLoading(false);
-          return;
-        }
-
-        setResolvedPark(matchedPark);
-      } catch (err) {
-        setError('Failed to resolve park information.');
-        setLoading(false);
+      if (matchedPark) {
+        setPark(matchedPark);
       }
     };
 
-    resolveParkInfo();
-  }, [species, speciesId, initialPark, selectedPark]);
+    fetchSelectedPark();
+  }, [park, speciesId, state]);
 
   useEffect(() => {
     const fetchDetail = async () => {
-      if (!species || !speciesId || !resolvedPark?.ParkCode) {
+      if (!speciesId || !park?.ParkCode) {
+        setIsLoading(false);
         return;
       }
 
-      try {
-        const response = await fetch(
-          `http://localhost:3007/api/species/detail?speciesId=${speciesId}&parkCode=${resolvedPark.ParkCode}`
-        );
+      setIsLoading(true);
+      setError('');
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch species detail');
-        }
+      const response = await getSpeciesDetailByPark(speciesId, park.ParkCode);
 
-        const data = await response.json();
-        setDetailData(data);
-        setError('');
-      } catch (err) {
-        setError('Failed to load species detail.');
-      } finally {
-        setLoading(false);
+      if (!response) {
+        setError('Failed to load species park details.');
+      } else {
+        setDetail(response);
       }
+
+      setIsLoading(false);
     };
 
     fetchDetail();
-  }, [species, speciesId, resolvedPark]);
+  }, [speciesId, park]);
 
-  const formattedRecentTime = useMemo(() => {
-    const raw = detailData?.mostRecentSighting?.SightingDate;
-    if (!raw) return 'Coming soon';
-
-    const dateObj = new Date(raw);
-    if (Number.isNaN(dateObj.getTime())) return 'Coming soon';
-
-    const timeText = dateObj.toLocaleTimeString([], {
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-
-    const dateText = dateObj.toLocaleDateString();
-    return `${timeText} ${dateText}`;
-  }, [detailData]);
-
-  const formattedLocation = useMemo(() => {
-    const recent = detailData?.mostRecentSighting;
-    if (!recent) return 'Coming soon';
-
-    if (recent.LocationName && recent.ParkName) {
-      return `${recent.LocationName} @ ${recent.ParkName}`;
+  const parkGeometry = useMemo(() => {
+    if (!detail?.parkInfo?.Geometry) {
+      return null;
     }
 
-    if (recent.LocationName) return recent.LocationName;
-    if (recent.ParkName) return recent.ParkName;
+    try {
+      return JSON.parse(detail.parkInfo.Geometry);
+    } catch (parseError) {
+      console.error('Failed to parse park geometry:', parseError);
+      return null;
+    }
+  }, [detail?.parkInfo?.Geometry]);
 
-    return 'Coming soon';
-  }, [detailData]);
+  const sightingPins = useMemo(() => {
+    return (detail?.sightingPins || []).filter((pin) => {
+      const latitude = Number(pin.Latitude);
+      const longitude = Number(pin.Longitude);
+      return !Number.isNaN(latitude) && !Number.isNaN(longitude);
+    });
+  }, [detail?.sightingPins]);
 
-  const monthlyBars = useMemo(() => {
-    const source = detailData?.monthlyDistribution || [];
-    const monthMap = new Map(
-      source.map((item) => [Number(item.Month), Number(item.SightingCount)])
-    );
+  const mapCenter = useMemo(() => {
+    if (sightingPins.length > 0) {
+      const totals = sightingPins.reduce(
+        (accumulator, pin) => ({
+          latitude: accumulator.latitude + Number(pin.Latitude),
+          longitude: accumulator.longitude + Number(pin.Longitude),
+        }),
+        { latitude: 0, longitude: 0 }
+      );
 
-    const fullMonths = Array.from({ length: 12 }, (_, i) => ({
-      label: String(i + 1),
-      value: monthMap.get(i + 1) || 0
-    }));
+      return [
+        totals.latitude / sightingPins.length,
+        totals.longitude / sightingPins.length,
+      ];
+    }
 
-    const maxValue = Math.max(...fullMonths.map((item) => item.value), 1);
+    if (parkGeometry) {
+      const bounds = L.geoJSON(parkGeometry).getBounds();
+      if (bounds.isValid()) {
+        const center = bounds.getCenter();
+        return [center.lat, center.lng];
+      }
+    }
 
-    return fullMonths.map((item) => ({
-      ...item,
-      heightPercent: item.value > 0 ? (item.value / maxValue) * 100 : 0
-    }));
-  }, [detailData]);
+    return [39.8283, -98.5795];
+  }, [parkGeometry, sightingPins]);
 
-  const hourlyBars = useMemo(() => {
-    const source = detailData?.hourlyDistribution || [];
-    const hourMap = new Map(
-      source.map((item) => [Number(item.Hour), Number(item.SightingCount)])
-    );
-
-    const fullHours = Array.from({ length: 24 }, (_, i) => ({
-      label: String(i),
-      value: hourMap.get(i) || 0
-    }));
-
-    const maxValue = Math.max(...fullHours.map((item) => item.value), 1);
-
-    return fullHours.map((item) => ({
-      ...item,
-      heightPercent: item.value > 0 ? (item.value / maxValue) * 100 : 0
-    }));
-  }, [detailData]);
-
-  const hasMonthlyData = monthlyBars.some((item) => item.value > 0);
-  const hasHourlyData = hourlyBars.some((item) => item.value > 0);
+  const hasMapData = Boolean(parkGeometry || sightingPins.length > 0);
 
   if (!species) {
     return (
       <div className="species-detail-page">
         <div className="species-detail-empty">
           <h2>No species data found.</h2>
-          <button className="detail-back-btn" onClick={() => navigate('/species')}>
-            Back to Species
-          </button>
+          <button onClick={() => navigate('/species')}>Go Back</button>
         </div>
       </div>
     );
   }
+
+  const mostRecentSightingText = detail?.mostRecentSighting?.SightingDate
+    ? new Date(detail.mostRecentSighting.SightingDate).toLocaleString()
+    : 'No sighting data available';
+
+  const lastObservedLocationText = detail?.mostRecentSighting?.LocationName
+    ? `${detail.mostRecentSighting.LocationName}${detail?.mostRecentSighting?.ParkName ? `, ${detail.mostRecentSighting.ParkName}` : ''}`
+    : 'No sighting data available';
+
+  const selectedParkLabel = park?.ParkName || state?.selectedPark || 'No park selected';
 
   return (
     <div className="species-detail-page">
@@ -202,109 +167,119 @@ function SpeciesDetail() {
 
       <div className="species-detail-content">
         <div className="species-detail-left">
-          <div className="detail-pill">{species.CommonName}</div>
+          <div className="species-pill">{species.CommonName}</div>
+          <div className="species-selected-park">{selectedParkLabel}</div>
 
-          <div className="detail-main-img-box">
+          <div className="species-main-image">
             {species.Image ? (
-              <img
-                src={species.Image}
-                alt={species.CommonName}
-                className="detail-main-img"
-              />
+              <img src={species.Image} alt={species.CommonName} />
             ) : (
-              <div className="detail-main-img-placeholder">Image</div>
+              <div className="image-placeholder">Image</div>
             )}
           </div>
 
-          <div className="detail-text-block">
+          <div className="species-text-block">
             <h2>{species.ScientificName}</h2>
-            <p className="detail-subtitle">{species.CommonName}</p>
+            <p className="species-scientific-name">{species.CommonName}</p>
             <p><strong>Category:</strong> {species.Category}</p>
             {species.OrderName && <p><strong>Order:</strong> {species.OrderName}</p>}
-            <p className="detail-description">
+            <p className="species-description">
               The <strong>{species.ScientificName}</strong> ({species.CommonName}) is a species in the category <strong>{species.Category}</strong>.
             </p>
-            {(resolvedPark?.ParkName || selectedPark) && (
-              <p className="detail-park-label">
-                <strong>Park:</strong> {resolvedPark?.ParkName || selectedPark}
-              </p>
-            )}
           </div>
         </div>
 
         <div className="species-detail-right">
-          {loading ? (
-            <p className="detail-message">Loading detail data...</p>
-          ) : error ? (
-            <p className="detail-message">{error}</p>
-          ) : (
-            <>
-              <div className="detail-info-row">
-                <div className="detail-label">Most Recent Sighting:</div>
-                <div className="detail-info-box">{formattedRecentTime}</div>
-              </div>
+          <div className="detail-info-row">
+            <span className="detail-label">Most Recent Sighting:</span>
+            <div className="detail-box">{mostRecentSightingText}</div>
+          </div>
 
-              <div className="detail-info-row">
-                <div className="detail-label">Last Observed Location:</div>
-                <div className="detail-info-box">{formattedLocation}</div>
-              </div>
+          <div className="detail-info-row">
+            <span className="detail-label">Last Observed Location:</span>
+            <div className="detail-box">{lastObservedLocationText}</div>
+          </div>
 
-              <div className="detail-chart-row">
-                <div className="detail-label">Best Time of Year to Spot:</div>
-                <div className="detail-chart-box">
-                  {hasMonthlyData ? (
-                    <div className="mini-chart">
-                      {monthlyBars.map((item) => (
-                        <div key={item.label} className="mini-bar-group">
-                          <div className="mini-bar-track">
-                            <div
-                              className="mini-bar-fill"
-                              style={{ height: `${item.heightPercent}%` }}
-                              title={`Month ${item.label}: ${item.value}`}
-                            ></div>
-                          </div>
-                          <div className="mini-bar-label">{item.label}</div>
-                        </div>
-                      ))}
+          <div className="detail-info-row">
+            <span className="detail-label">Best Time of Year to Spot:</span>
+            <div className="detail-blank-box"></div>
+          </div>
+
+          <div className="detail-info-row">
+            <span className="detail-label">Time of Day:</span>
+            <div className="detail-blank-box"></div>
+          </div>
+
+          <div className="detail-info-row map-row">
+            <span className="detail-label">Geographic Distribution:</span>
+            <div className="map-placeholder">
+              {isLoading ? (
+                <div className="map-status">Loading map...</div>
+              ) : error ? (
+                <div className="map-status">{error}</div>
+              ) : !park ? (
+                <div className="map-status">Select a park to view map data.</div>
+              ) : (
+                <>
+                  {!hasMapData && (
+                    <div className="map-overlay-message">
+                      No geometry data available for this species in this park.
                     </div>
-                  ) : (
-                    <div className="chart-empty-state">No sighting data yet</div>
                   )}
-                </div>
-              </div>
+                  <MapContainer
+                    center={mapCenter}
+                    zoom={hasMapData ? 10 : 4}
+                    scrollWheelZoom={true}
+                    className="species-leaflet-map"
+                  >
+                    <MapViewportController
+                      parkGeometry={parkGeometry}
+                      sightingPins={sightingPins}
+                    />
 
-              <div className="detail-chart-row">
-                <div className="detail-label">Time of Day:</div>
-                <div className="detail-chart-box">
-                  {hasHourlyData ? (
-                    <div className="mini-chart mini-chart-hourly">
-                      {hourlyBars.map((item) => (
-                        <div key={item.label} className="mini-bar-group">
-                          <div className="mini-bar-track">
-                            <div
-                              className="mini-bar-fill"
-                              style={{ height: `${item.heightPercent}%` }}
-                              title={`${item.label}:00 - ${item.value}`}
-                            ></div>
+                    <TileLayer
+                      attribution='&copy; OpenStreetMap contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+
+                    {parkGeometry && (
+                      <GeoJSON
+                        data={parkGeometry}
+                        style={() => ({
+                          color: '#556b44',
+                          weight: 2,
+                          fillColor: '#899c75',
+                          fillOpacity: 0.2,
+                        })}
+                      />
+                    )}
+
+                    {sightingPins.map((pin) => (
+                      <CircleMarker
+                        key={pin.LocationID}
+                        center={[Number(pin.Latitude), Number(pin.Longitude)]}
+                        radius={8}
+                        pathOptions={{
+                          color: '#2b3a20',
+                          fillColor: '#899c75',
+                          fillOpacity: 0.9,
+                          weight: 2,
+                        }}
+                      >
+                        <Popup>
+                          <div className="map-popup">
+                            <strong>{pin.LocationName}</strong>
+                            <div>{pin.LocationType}</div>
+                            <div>Sightings: {pin.SightingCount}</div>
                           </div>
-                          <div className="mini-bar-label small-hour-label">{item.label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="chart-empty-state">No sighting data yet</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="detail-map-row">
-                <div className="detail-label">Geographic Distribution:</div>
-                <div className="detail-map-box">
-                  <div className="detail-map-placeholder">Map area coming soon</div>
-                </div>
-              </div>
-            </>
-          )}
+                        </Popup>
+                      </CircleMarker>
+                    ))}
+                  </MapContainer>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

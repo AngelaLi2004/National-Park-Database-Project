@@ -344,39 +344,67 @@ export async function getSpeciesDetailByPark(
     ORDER BY Hour;
   `;
 
-  // Query 4: Park geometry (for the map)
-  // Park image
+  // Query 4: Park geometry + image for the map
   const parkInfoSQL = `
-    SELECT Image
+    SELECT
+      ParkCode,
+      ParkName,
+      Image,
+      Geometry
     FROM national_park_species_database.NationalParks
     WHERE ParkCode = ?;
   `;
 
-  // Sighting pins: distinct locations with extracted lat/lng
+  // Query 5: map center derived from this species' sighting locations in the park
+  const mapCenterSQL = `
+    SELECT
+      AVG(pin_data.Latitude) AS Latitude,
+      AVG(pin_data.Longitude) AS Longitude
+    FROM (
+      SELECT DISTINCT
+        l.LocationID,
+        CAST(JSON_UNQUOTE(JSON_EXTRACT(l.Geometry, '$.coordinates[1]')) AS DECIMAL(10, 6)) AS Latitude,
+        CAST(JSON_UNQUOTE(JSON_EXTRACT(l.Geometry, '$.coordinates[0]')) AS DECIMAL(10, 6)) AS Longitude
+      FROM national_park_species_database.Sightings s
+      JOIN national_park_species_database.Locations l
+        ON s.LocationID = l.LocationID
+      WHERE s.SpeciesID = ?
+        AND l.ParkCode = ?
+        AND JSON_UNQUOTE(JSON_EXTRACT(l.Geometry, '$.type')) = 'Point'
+    ) AS pin_data;
+  `;
+
+  // Query 6: sighting pins for this species in the selected park
   const pinsSQL = `
-    SELECT DISTINCT
+    SELECT
       l.LocationID,
       l.Name AS LocationName,
-      CAST(JSON_EXTRACT(l.Geometry, '$.coordinates[0]') AS DECIMAL(10,6)) AS Longitude,
-      CAST(JSON_EXTRACT(l.Geometry, '$.coordinates[1]') AS DECIMAL(10,6)) AS Latitude,
+      l.Type AS LocationType,
+      l.ParkCode,
+      CAST(JSON_UNQUOTE(JSON_EXTRACT(l.Geometry, '$.coordinates[0]')) AS DECIMAL(10, 6)) AS Longitude,
+      CAST(JSON_UNQUOTE(JSON_EXTRACT(l.Geometry, '$.coordinates[1]')) AS DECIMAL(10, 6)) AS Latitude,
       COUNT(s.SightingID) AS SightingCount
     FROM national_park_species_database.Sightings s
     JOIN national_park_species_database.Locations l ON s.LocationID = l.LocationID
-    WHERE s.SpeciesID = ? AND l.ParkCode = ?
-    GROUP BY l.LocationID, l.Name, l.Geometry;
+    WHERE s.SpeciesID = ?
+      AND l.ParkCode = ?
+      AND JSON_UNQUOTE(JSON_EXTRACT(l.Geometry, '$.type')) = 'Point'
+    GROUP BY l.LocationID, l.Name, l.Type, l.ParkCode, l.Geometry;
   `;
 
   const [recentRows] = await pool.query<RowDataPacket[]>(recentSightingSQL, [speciesId, parkCode]);
   const [monthlyRows] = await pool.query<RowDataPacket[]>(monthlySQL, [speciesId, parkCode]);
   const [hourlyRows] = await pool.query<RowDataPacket[]>(hourlySQL, [speciesId, parkCode]);
   const [parkRows] = await pool.query<RowDataPacket[]>(parkInfoSQL, [parkCode]);
+  const [centerRows] = await pool.query<RowDataPacket[]>(mapCenterSQL, [speciesId, parkCode]);
   const [pinsRows] = await pool.query<RowDataPacket[]>(pinsSQL, [speciesId, parkCode]);
 
   return {
-    mostRecentSighting: recentRows[0] || null,       // SightingDate, LocationName, ParkName
-    monthlyDistribution: monthlyRows,                 // [{Month: 1, SightingCount: 3}, ...]
-    hourlyDistribution: hourlyRows,                   // [{Hour: 14, SightingCount: 5}, ...]
-    parkInfo: parkRows[0] || null,                    // Geometry, Image
+    mostRecentSighting: recentRows[0] || null,
+    monthlyDistribution: monthlyRows,
+    hourlyDistribution: hourlyRows,
+    parkInfo: parkRows[0] || null,
+    mapCenter: centerRows[0] || null,
     sightingPins: pinsRows,
   };
 }

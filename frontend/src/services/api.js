@@ -47,6 +47,32 @@ export const getAllNationalParks = async () => {
   }
 };
 
+export const getParksBySpeciesId = async (speciesId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/species/${speciesId}/parks`);
+    if (!response.ok) throw new Error("Failed to fetch parks for species");
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+export const getSpeciesDetailByPark = async (speciesId, parkCode) => {
+  try {
+    const params = new URLSearchParams();
+    params.append('speciesId', speciesId);
+    params.append('parkCode', parkCode);
+
+    const response = await fetch(`${BASE_URL}/species/detail?${params.toString()}`);
+    if (!response.ok) throw new Error("Failed to fetch species detail");
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
 export const searchLocationsDB = async (name, parkCode) => {
   try {
     const params = new URLSearchParams();

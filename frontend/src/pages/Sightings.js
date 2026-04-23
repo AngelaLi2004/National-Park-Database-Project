@@ -5,6 +5,7 @@ import {
   getUserSightings,
   addSightingDB,
   deleteSightingDB,
+  updateSightingDB,
   searchSpeciesDB,
   searchLocationsDB
 } from '../services/api';
@@ -31,6 +32,12 @@ function Sightings({ user }) {
 
   const [selectedSpeciesId, setSelectedSpeciesId] = useState(null);
   const [selectedLocationId, setSelectedLocationId] = useState(null);
+  const [existingImageUrl, setExistingImageUrl] = useState(null);
+
+  const formatLocationLabel = (item) => {
+    const parkCode = item?.ParkCode ? `[${item.ParkCode}] ` : '';
+    return `${parkCode}${item?.Name || item?.LocationName || ''}`;
+  };
 
   useEffect(() => {
     const fetchSightings = async () => {
@@ -47,11 +54,7 @@ function Sightings({ user }) {
     const delayDebounceFn = setTimeout(async () => {
       if (species.trim().length > 0 && species !== selectedValidSpecies) {
         try {
-          const [commonResults, scientificResults] = await Promise.all([
-                      searchSpeciesDB(species, 'common', 'ALL', 'ALL', 'ASC'),
-                      searchSpeciesDB(species, 'scientific', 'ALL', 'ALL', 'ASC'),
-                    ]);
-                    const results = [...commonResults, ...scientificResults];
+          const results = await searchSpeciesDB(species, 'common', 'ALL', 'ALL', 'ASC');
           const uniqueResults = Array.from(
             new Map(results.map(item => [item.SpeciesID, item])).values()
           );
@@ -118,8 +121,9 @@ function Sightings({ user }) {
   };
 
   const handleSelectLocation = (item) => {
-    setLocationSearch(item.Name);
-    setSelectedValidLocation(item.Name);
+    const locationLabel = formatLocationLabel(item);
+    setLocationSearch(locationLabel);
+    setSelectedValidLocation(locationLabel);
     setSelectedLocationId(item.LocationID);
     setShowLocationDropdown(false);
   };
@@ -133,12 +137,13 @@ function Sightings({ user }) {
     setSelectedValidSpecies(spName);
     setSelectedSpeciesId(s?.SpeciesID || null);
 
-    const locName = s?.location || s?.LocationName || '';
-    setLocationSearch(locName);
-    setSelectedValidLocation(locName);
+    const locationLabel = formatLocationLabel(s);
+    setLocationSearch(locationLabel);
+    setSelectedValidLocation(locationLabel);
     setSelectedLocationId(s?.LocationID || null);
 
     setDescription(s?.description || s?.Description || '');
+    setExistingImageUrl(s?.ImageURL || null);
 
     const rawDate = s?.date || s?.SightingDate || '';
     if (rawDate) {
@@ -171,6 +176,7 @@ function Sightings({ user }) {
     setDate('');
     setTime('');
     setImageFile(null);
+    setExistingImageUrl(null);
     setFilteredSpecies([]);
     setShowSpeciesDropdown(false);
     setFilteredLocations([]);
@@ -196,23 +202,25 @@ function Sightings({ user }) {
     }
 
     try {
-      const formData = new FormData();
+      const imageBase64 = await fileToBase64(imageFile);
 
-      formData.append("image", imageFile);
-
-      formData.append("UserID", user.id);
-      formData.append("SpeciesID", selectedSpeciesId);
-      formData.append("LocationID", selectedLocationId);
-      formData.append("SightingDate", `${date}T${time}:00`);
-      formData.append("Description", description);
+      const newSighting = {
+        UserID: user.id,
+        SpeciesID: selectedSpeciesId,
+        LocationID: selectedLocationId,
+        SightingDate: `${date}T${time}:00`,
+        Description: description,
+        ImageURL: imageBase64 || existingImageUrl || null
+      };
 
       if (selectedId) {
-        alert('Updating existing sightings coming soon!');
+        await updateSightingDB(selectedId, newSighting);
       } else {
-        await addSightingDB(formData);
-        const updatedList = await getUserSightings(user.id);
-        setSightings(updatedList);
+        await addSightingDB(newSighting);
       }
+
+      const updatedList = await getUserSightings(user.id);
+      setSightings(updatedList);
 
       clearForm();
     } catch (err) {
@@ -285,7 +293,7 @@ function Sightings({ user }) {
                     {' '}
                     {item.date || (item.SightingDate ? new Date(item.SightingDate).toLocaleDateString() : '')}
                   </div>
-                  <div className="location-text">📍 {item.location || item.LocationName}</div>
+                  <div className="location-text">📍 {formatLocationLabel(item)}</div>
                   {(item.description || item.Description) && (
                     <div className="description-text">"{item.description || item.Description}"</div>
                   )}
@@ -388,7 +396,7 @@ function Sightings({ user }) {
                     {filteredLocations.length > 0 ? (
                       filteredLocations.map((item) => (
                         <li key={item.LocationID} onClick={() => handleSelectLocation(item)}>
-                          {item.Name} <span className="dropdown-subtext">({item.Type})</span>
+                          {formatLocationLabel(item)} <span className="dropdown-subtext">({item.Type})</span>
                         </li>
                       ))
                     ) : (
