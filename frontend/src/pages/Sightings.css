@@ -6,8 +6,13 @@
   margin: 0 auto;
 }
 
-.left-panel { flex: 2; }
-.right-panel { flex: 1; }
+.left-panel {
+  flex: 2;
+}
+
+.right-panel {
+  flex: 1;
+}
 
 .header-row {
   display: flex;
@@ -141,24 +146,24 @@
   border: none;
   border-radius: 15px;
   padding: 10px;
-  background-color: #ffffff; 
+  background-color: #ffffff;
   box-sizing: border-box;
   outline: none;
 }
 
 .autocomplete-wrapper {
   position: relative;
-  padding: 0; 
+  padding: 0;
   width: 60%;
-  background-color: transparent; 
+  background-color: transparent;
 }
 
 .autocomplete-wrapper input {
-  width: 100%; 
+  width: 100%;
   border: none;
   border-radius: 15px;
   padding: 10px;
-  background-color: #ffffff; 
+  background-color: #ffffff;
   box-sizing: border-box;
   outline: none;
 }
@@ -176,7 +181,7 @@
   margin: 0;
   padding: 0;
   z-index: 10;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .location-dropdown li {
@@ -184,6 +189,7 @@
   font-size: 14px;
   cursor: pointer;
   border-bottom: 1px solid #f4f7f0;
+  list-style: none;
 }
 
 .location-dropdown li:hover {
@@ -229,7 +235,7 @@
 }
 
 .form-group.align-top label {
-  margin-top: 8px; 
+  margin-top: 8px;
 }
 
 .description-text {
@@ -249,13 +255,13 @@
 }
 
 .form-textarea {
-  width: 100%; 
+  width: 100%;
   border: none;
   border-radius: 15px;
   padding: 10px;
   background-color: #ffffff;
   box-sizing: border-box;
-  font-family: inherit; 
+  font-family: inherit;
   font-size: 14px;
   outline: none;
 }

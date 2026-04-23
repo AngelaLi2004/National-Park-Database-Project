@@ -193,12 +193,51 @@ export async function updateSighting(sighting: Sighting): Promise<void> {
   ]);
 }
 
-export async function getSightingsByUser(userId: number): Promise<Sighting[]> {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT * FROM national_park_species_database.Sightings 
-    WHERE UserID = ? 
-    ORDER BY SightingDate DESC`,
-    [userId]
-  );
-  return rows as Sighting[];
+export async function getSightingsByUser(userId: number) {
+  const sql = `
+    SELECT 
+      s.SightingID,
+      s.UserID,
+      s.LocationID,
+      s.SpeciesID,
+      s.SightingDate,
+      s.ImageURL,
+      s.Description,
+      sp.CommonName AS SpeciesName,
+      l.Name AS LocationName,
+      l.Type AS LocationType,
+      l.ParkCode
+    FROM national_park_species_database.Sightings s
+    JOIN national_park_species_database.Species sp
+      ON s.SpeciesID = sp.SpeciesID
+    JOIN national_park_species_database.Locations l
+      ON s.LocationID = l.LocationID
+    WHERE s.UserID = ?
+    ORDER BY s.SightingDate DESC
+  `;
+  const [rows] = await pool.query<RowDataPacket[]>(sql, [userId]);
+  return rows;
+}
+
+export async function searchLocations(
+  name: string,
+  parkCode?: string
+) {
+  let sqlQuery = `
+    SELECT LocationID, ParkCode, Name, Type, Geometry
+    FROM national_park_species_database.Locations
+    WHERE LOWER(Name) LIKE CONCAT('%', ?, '%')
+  `;
+
+  const queryParams: any[] = [name.toLowerCase()];
+
+  if (parkCode) {
+    sqlQuery += ` AND ParkCode = ?`;
+    queryParams.push(parkCode);
+  }
+
+  sqlQuery += ` ORDER BY Name ASC LIMIT 20;`;
+
+  const [rows] = await pool.query<RowDataPacket[]>(sqlQuery, queryParams);
+  return rows;
 }

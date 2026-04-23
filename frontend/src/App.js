@@ -8,6 +8,7 @@ import Sightings from './pages/Sightings';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import './App.css';
+import SpeciesDetail from './pages/SpeciesDetail';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -23,6 +24,7 @@ function App() {
           <Route path="/sightings" element={<Sightings user={user} />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/signup" element={<Signup setUser={setUser} />} /> 
+          <Route path="/species/:speciesId" element={<SpeciesDetail />} />
         </Routes>
       </div>
     </BrowserRouter>
