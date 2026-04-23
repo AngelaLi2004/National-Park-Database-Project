@@ -123,6 +123,25 @@ export async function getSpeciesByPark(
   return rows as Species[];
 }
 
+export async function getParksBySpeciesId(speciesId: number) {
+  const sqlQuery = `
+    SELECT DISTINCT
+      p.ParkCode,
+      p.ParkName,
+      p.State,
+      p.Image,
+      p.Description
+    FROM national_park_species_database.NationalParks p
+    JOIN national_park_species_database.ParkSpecies ps
+      ON p.ParkCode = ps.ParkCode
+    WHERE ps.SpeciesID = ?
+    ORDER BY p.ParkName ASC
+  `;
+
+  const [rows] = await pool.query<RowDataPacket[]>(sqlQuery, [speciesId]);
+  return rows;
+}
+
 // Sightings
 export async function getSightingsBySpeciesAndPark(
   speciesId: number,

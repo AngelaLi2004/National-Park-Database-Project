@@ -73,9 +73,18 @@ function Species() {
   };
 
   const handleCardClick = (species) => {
-    navigate(`/species/${species.SpeciesID}`, {
-      state: { species }
-    });
+    if (selectedPark === 'ALL') {
+      navigate(`/species/${species.SpeciesID}/parks`, {
+        state: { species }
+      });
+    } else {
+      navigate(`/species/${species.SpeciesID}`, {
+        state: {
+          species,
+          selectedPark
+        }
+      });
+    }
   };
 
   const carouselImages = [
