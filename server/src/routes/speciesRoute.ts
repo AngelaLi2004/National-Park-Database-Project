@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { searchSpecies, getSpeciesByPark, enrichSpeciesWithImages } from "../services/database";
+import { searchSpecies, getSpeciesByPark, enrichSpeciesWithImages, getSpeciesDetailByPark } from "../services/database";
 import { Species } from "../models/species";
 
 const router = Router();
@@ -67,4 +67,25 @@ router.get("/by-park", async (req: Request, res: Response) => {
     console.error('Error:', error);
   }
 });
+
+// GET /api/species/detail?speciesId=123&parkCode=GLAC
+router.get("/detail", async (req: Request, res: Response) => {
+  const { speciesId, parkCode } = req.query;
+
+  if (!speciesId || !parkCode) {
+    return res.status(400).json({ message: "speciesId and parkCode are required" });
+  }
+
+  try {
+    const detail = await getSpeciesDetailByPark(
+      Number(speciesId),
+      parkCode as string
+    );
+    res.status(200).json(detail);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching species detail" });
+    console.error('Error:', error);
+  }
+});
+
 export default router;
