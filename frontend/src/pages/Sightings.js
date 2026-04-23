@@ -196,21 +196,20 @@ function Sightings({ user }) {
     }
 
     try {
-      const imageBase64 = await fileToBase64(imageFile);
+      const formData = new FormData();
 
-      const newSighting = {
-        UserID: user.id,
-        SpeciesID: selectedSpeciesId,
-        LocationID: selectedLocationId,
-        SightingDate: `${date}T${time}:00`,
-        Description: description,
-        ImageURL: imageBase64
-      };
+      formData.append("image", imageFile);
+
+      formData.append("UserID", user.id);
+      formData.append("SpeciesID", selectedSpeciesId);
+      formData.append("LocationID", selectedLocationId);
+      formData.append("SightingDate", `${date}T${time}:00`);
+      formData.append("Description", description);
 
       if (selectedId) {
         alert('Updating existing sightings coming soon!');
       } else {
-        await addSightingDB(newSighting);
+        await addSightingDB(formData);
         const updatedList = await getUserSightings(user.id);
         setSightings(updatedList);
       }

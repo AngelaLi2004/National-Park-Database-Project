@@ -81,8 +81,9 @@ export const addSightingDB = async (sightingData) => {
   try {
     const response = await fetch(`${BASE_URL}/sightings`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sightingData),
+      // headers: { 'Content-Type': 'application/json' },
+      // body: JSON.stringify(sightingData),
+      body: sightingData,
     });
     if (!response.ok) throw new Error("Failed to add sighting");
     return await response.json();
