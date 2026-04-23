@@ -54,7 +54,11 @@ function Sightings({ user }) {
     const delayDebounceFn = setTimeout(async () => {
       if (species.trim().length > 0 && species !== selectedValidSpecies) {
         try {
-          const results = await searchSpeciesDB(species, 'common', 'ALL', 'ALL', 'ASC');
+          const [commonResults, scientificResults] = await Promise.all([
+            searchSpeciesDB(species, 'common', 'ALL', 'ALL', 'ASC'),
+            searchSpeciesDB(species, 'scientific', 'ALL', 'ALL', 'ASC'),
+          ]);
+          const results = [...commonResults, ...scientificResults];
           const uniqueResults = Array.from(
             new Map(results.map(item => [item.SpeciesID, item])).values()
           );
