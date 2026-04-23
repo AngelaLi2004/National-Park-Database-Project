@@ -1,9 +1,5 @@
-export interface Sighting {
-    SightingID: number;
-    UserID: number;
-    LocationID: number;
-    SpeciesID: number;
-    SightingDate: string | Date; 
-    ImageURL?: string;
-    Description?: string;
+import { SightingInput } from "./sightingInput";
+
+export interface Sighting extends SightingInput {
+  SightingID: number;
 }

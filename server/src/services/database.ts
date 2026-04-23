@@ -2,9 +2,37 @@ import { Species } from "../models/species";
 import { User } from '../models/user';
 import { Sighting } from "../models/sighting";
 import { NationalPark } from "../models/nationalpark";
+import { SightingInput } from "../models/sightingInput";
 import pool from './connection';
 import { RowDataPacket, ResultSetHeader } from "mysql2";
 import { fetchImageByScientificName } from "./image";
+import { Storage } from "@google-cloud/storage";
+
+const storage = new Storage();
+const bucket = storage.bucket(process.env.GCS_BUCKET!);
+
+export async function uploadImage(file: Express.Multer.File): Promise<string> {
+  const fileName = `sightings/${Date.now()}-${file.originalname}`;
+
+  const blob = bucket.file(fileName);
+
+  const stream = blob.createWriteStream({
+    resumable: false,
+    contentType: file.mimetype,
+  });
+
+  return new Promise((resolve, reject) => {
+    stream.on("error", reject);
+
+    stream.on("finish", async () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      resolve(publicUrl);
+    });
+
+    stream.end(file.buffer);
+  });
+}
+
 // login
 export async function getUserByUsername(username: string): Promise<User | null> {
   const query = `SELECT * FROM Users WHERE Username = ?`;
@@ -180,7 +208,7 @@ export async function getSightingsBySpeciesAndPark(
   return rows as Sighting[];
 }
 
-export async function addSighting(sighting: Sighting): Promise<Sighting> {
+export async function addSighting(sighting: SightingInput): Promise<Sighting> {
   const sql = `
     INSERT INTO national_park_species_database.Sightings
       (UserID, LocationID, SpeciesID, SightingDate, ImageURL, Description)

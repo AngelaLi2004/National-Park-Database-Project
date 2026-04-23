@@ -1,14 +1,28 @@
 // src/routes/sightingRoute.ts
 import express, { Request, Response } from "express";
-import { deleteSighting, addSighting, updateSighting, getSightingsBySpeciesAndPark, getSightingsByUser } from "../services/database";
+import { uploadImage, deleteSighting, addSighting, updateSighting, getSightingsBySpeciesAndPark, getSightingsByUser } from "../services/database";
+import multer from "multer";
 
+const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 // Add a new sighting
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", upload.single("image"), async (req: Request, res: Response) => {
   try {
-    const sighting = await addSighting(req.body);
-    res.status(201).json(sighting);
+    let imageUrl: string | null = null;
+    if (req.file) {
+      imageUrl = await uploadImage(req.file);
+    }
+    const sighting = {
+        UserID: req.body.UserID,
+        LocationID: req.body.LocationID,
+        SpeciesID: req.body.SpeciesID,
+        SightingDate: req.body.SightingDate,
+        ImageURL: imageUrl ?? undefined,
+        Description: req.body.Description,
+    };
+    const sighting_res = await addSighting(sighting);
+    res.status(201).json(sighting_res);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to add sighting" });
