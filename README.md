@@ -4,7 +4,8 @@ This project is a full-stack web application designed to provide a platform for 
 
 <!-- Insert application screenshot here -->
 <!-- e.g., ![Application Homepage Screenshot](1.png) -->
-
+![Application Homepage Screenshot](1.png)
+![Interactive Map Screenshot](2.png)
 ## Core Features
 
 1.  **Species Information Query**:
