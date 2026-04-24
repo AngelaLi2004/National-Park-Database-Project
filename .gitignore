@@ -1,14 +1,4 @@
-/doc/
 
-# temporary file
-.DS_Store
-Thumbs.db
-
-# 
-.vscode/
-.idea/
-*.swp
-.env*
-build
-*/node_modules
-
+# Ignore environment variables and keys
+.env
+server/keys/
