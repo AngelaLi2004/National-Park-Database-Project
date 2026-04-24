@@ -1,4 +1,13 @@
 
-# Ignore environment variables and keys
+# Dependencies
+/node_modules
+/frontend/node_modules
+/server/node_modules
+
+# Build artifacts
+/build
+/frontend/build
+
+# Environment variables and keys
 .env
 server/keys/
